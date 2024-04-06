@@ -5,7 +5,7 @@ plugins {
     signing
 }
 
-group = "app.revanced"
+group = "kofua.app.revanced"
 
 tasks {
     processResources {
@@ -27,6 +27,14 @@ repositories {
     maven {
         // A repository must be speficied for some reason. "registry" is a dummy.
         url = uri("https://maven.pkg.github.com/revanced/registry")
+        credentials {
+            username = project.findProperty("gpr.user") as String? ?: System.getenv("GITHUB_ACTOR")
+            password = project.findProperty("gpr.key") as String? ?: System.getenv("GITHUB_TOKEN")
+        }
+    }
+    maven {
+        // A repository must be speficied for some reason. "registry" is a dummy.
+        url = uri("https://maven.pkg.github.com/zjns/registry")
         credentials {
             username = project.findProperty("gpr.user") as String? ?: System.getenv("GITHUB_ACTOR")
             password = project.findProperty("gpr.key") as String? ?: System.getenv("GITHUB_TOKEN")
@@ -55,14 +63,18 @@ kotlin {
     jvmToolchain(11)
 }
 
+java {
+    withSourcesJar()
+}
+
 publishing {
     repositories {
         maven {
             name = "GitHubPackages"
-            url = uri("https://maven.pkg.github.com/revanced/revanced-patcher")
+            url = uri("https://maven.pkg.github.com/zjns/revanced-patcher")
             credentials {
-                username = System.getenv("GITHUB_ACTOR")
-                password = System.getenv("GITHUB_TOKEN")
+                username = project.findProperty("gpr.user") as String? ?: System.getenv("GITHUB_ACTOR")
+                password = project.findProperty("gpr.key") as String? ?: System.getenv("GITHUB_TOKEN")
             }
         }
     }
@@ -92,9 +104,9 @@ publishing {
                     }
                 }
                 scm {
-                    connection = "scm:git:git://github.com/revanced/revanced-patcher.git"
-                    developerConnection = "scm:git:git@github.com:revanced/revanced-patcher.git"
-                    url = "https://github.com/revanced/revanced-patcher"
+                    connection = "scm:git:git://github.com/zjns/revanced-patcher.git"
+                    developerConnection = "scm:git:git@github.com:zjns/revanced-patcher.git"
+                    url = "https://github.com/zjns/revanced-patcher"
                 }
             }
         }
