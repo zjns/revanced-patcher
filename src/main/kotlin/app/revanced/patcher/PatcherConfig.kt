@@ -21,6 +21,7 @@ class PatcherConfig(
     aaptBinaryPath: String? = null,
     frameworkFileDirectory: String? = null,
     internal val multithreadingDexFileWriter: Boolean = false,
+    private val shortenResourcePaths: Boolean = false,
 ) {
     private val logger = Logger.getLogger(PatcherConfig::class.java.name)
 
@@ -39,6 +40,7 @@ class PatcherConfig(
             useAapt2 = true
             aaptPath = aaptBinaryPath ?: ""
             frameworkDirectory = frameworkFileDirectory
+            this.shortenResourcePaths = this@PatcherConfig.shortenResourcePaths
         }
 
     /**
