@@ -1,6 +1,6 @@
 [versions]
 android = "4.1.1.4"
-apktool-lib = "2.9.3"
+apktool-lib = "2.9.3.1"
 kotlin = "1.9.22"
 kotlinx-coroutines-core = "1.7.3"
 multidexlib2 = "3.0.3.r3"
