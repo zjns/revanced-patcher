@@ -1,10 +1,10 @@
 [versions]
 android = "4.1.1.4"
-apktool-lib = "2.9.3.1"
+apktool-lib = "2.12.0.1"
 kotlin = "1.9.22"
 kotlinx-coroutines-core = "1.7.3"
 multidexlib2 = "3.0.3.r3"
-smali = "3.0.4"
+smali = "3.0.9"
 binary-compatibility-validator = "0.14.0"
 xpp3 = "1.1.4c"
 

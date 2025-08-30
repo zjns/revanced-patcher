@@ -8,12 +8,12 @@ import app.revanced.patcher.util.Document
 import app.revanced.patcher.util.DomFileEditor
 import brut.androlib.AaptInvoker
 import brut.androlib.ApkDecoder
-import brut.androlib.apk.UsesFramework
+import brut.androlib.meta.UsesFramework
 import brut.androlib.res.Framework
 import brut.androlib.res.ResourcesDecoder
+import brut.androlib.res.decoder.AndroidManifestPullStreamDecoder
 import brut.androlib.res.decoder.AndroidManifestResourceParser
-import brut.androlib.res.decoder.XmlPullStreamDecoder
-import brut.androlib.res.xml.ResXmlPatcher
+import brut.androlib.res.xml.ResXmlUtils
 import brut.directory.ExtFile
 import java.io.File
 import java.io.InputStream
@@ -57,7 +57,7 @@ class ResourceContext internal constructor(
             config.initializeTemporaryFilesDirectories()
 
             // Needed to decode resources.
-            val resourcesDecoder = ResourcesDecoder(config.resourceConfig, this)
+            val resourcesDecoder = ResourcesDecoder(this, config.resourceConfig)
 
             if (mode == ResourceMode.FULL) {
                 logger.info("Decoding resources")
@@ -66,22 +66,21 @@ class ResourceContext internal constructor(
                 resourcesDecoder.decodeManifest(config.apkFiles)
 
                 // Needed to record uncompressed files.
-                val apkDecoder = ApkDecoder(config.resourceConfig, this)
+                val apkDecoder = ApkDecoder(this, config.resourceConfig)
                 apkDecoder.recordUncompressedFiles(resourcesDecoder.resFileMapping)
 
-                usesFramework =
-                    UsesFramework().apply {
-                        ids = resourcesDecoder.resTable.listFramePackages().map { it.id }
-                    }
+                usesFramework = UsesFramework().apply {
+                    ids = resourcesDecoder.resTable.framePackages.map { it.id }
+                }
             } else {
                 logger.info("Decoding app manifest")
 
                 // Decode manually instead of using resourceDecoder.decodeManifest
                 // because it does not support decoding to an OutputStream.
-                XmlPullStreamDecoder(
+                AndroidManifestPullStreamDecoder(
                     AndroidManifestResourceParser(resourcesDecoder.resTable),
-                    resourcesDecoder.resXmlSerializer,
-                ).decodeManifest(
+                    resourcesDecoder.newXmlSerializer(),
+                ).decode(
                     apkFile.directory.getFileInput("AndroidManifest.xml"),
                     // Older Android versions do not support OutputStream.nullOutputStream()
                     object : OutputStream() {
@@ -93,7 +92,7 @@ class ResourceContext internal constructor(
                 // Get the package name and version from the manifest using the XmlPullStreamDecoder.
                 // XmlPullStreamDecoder.decodeManifest() sets metadata.apkInfo.
                 packageMetadata.let { metadata ->
-                    metadata.packageName = resourcesDecoder.resTable.packageRenamed
+                    metadata.packageName = packageInfo.renameManifestPackage
                     versionInfo.let {
                         metadata.packageVersion = it.versionName ?: it.versionCode
                     }
@@ -106,7 +105,7 @@ class ResourceContext internal constructor(
 
                      Set this to false again to prevent the ResTable from being flagged as sparse falsely.
                      */
-                    metadata.apkInfo.sparseResources = false
+                    metadata.apkInfo.isSparseResources = false
                 }
             }
         }
@@ -129,19 +128,19 @@ class ResourceContext internal constructor(
                 resources.resolve("resources.apk").apply {
                     // Compile the resources.apk file.
                     AaptInvoker(
-                        config.resourceConfig,
                         packageMetadata.apkInfo,
-                    ).invokeAapt(
+                        config.resourceConfig,
+                    ).invoke(
                         resources.resolve("resources.apk"),
                         config.apkFiles.resolve("AndroidManifest.xml").also {
-                            ResXmlPatcher.fixingPublicAttrsInProviderAttributes(it)
+                            ResXmlUtils.fixingPublicAttrsInProviderAttributes(it)
                         },
                         config.apkFiles.resolve("res"),
                         null,
                         null,
                         packageMetadata.apkInfo.usesFramework.let { usesFramework ->
                             usesFramework.ids.map { id ->
-                                Framework(config.resourceConfig).getFrameworkApk(id, usesFramework.tag)
+                                Framework(config.resourceConfig).getApkFile(id, usesFramework.tag)
                             }.toTypedArray()
                         },
                     )
